@@ -62,7 +62,6 @@
         #map {
             width: 100%;
             height: 100%;
-            /* High-end infographic background gradient */
             background: radial-gradient(circle, #1c2541 0%, #0b132b 100%) !important;
         }
 
@@ -75,7 +74,7 @@
             height: 145px;
             border: 2px dashed #3a506b;
             border-radius: 8px;
-            pointer-events: none; /* Let clicks pass through to map elements */
+            pointer-events: none;
             z-index: 1000;
             background: rgba(28, 37, 65, 0.2);
         }
@@ -145,7 +144,7 @@
             padding-bottom: 4px;
         }
         
-        /* CSS Legend Pattern Swatches to match SVG precisely */
+        /* CSS Legend Pattern Swatches */
         .legend-color {
             width: 18px;
             height: 18px;
@@ -174,6 +173,12 @@
             background: linear-gradient(45deg, #d90429 16.6%, #edf2f4 16.6%, #edf2f4 33.3%, #00b4d8 33.3%, #00b4d8 50%, #d90429 50%, #d90429 66.6%, #edf2f4 66.6%, #edf2f4 83.3%, #00b4d8 83.3%);
             background-size: 12px 12px;
         }
+
+        /* Pure CSS Pattern engine classes to bypass the SVG cache block entirely */
+        .pattern-salad-other { fill: #d90429 !important; filter: drop-shadow(0px 0px 1px #00b4d8); stroke-dasharray: 4; stroke: #00b4d8 !important; stroke-width: 3px !important;}
+        .pattern-chips-other { fill: #edf2f4 !important; filter: drop-shadow(0px 0px 1px #00b4d8); stroke-dasharray: 4; stroke: #00b4d8 !important; stroke-width: 3px !important;}
+        .pattern-salad-chips { fill: #d90429 !important; filter: drop-shadow(0px 0px 1px #edf2f4); stroke-dasharray: 4; stroke: #edf2f4 !important; stroke-width: 3px !important;}
+        .pattern-all { fill: #d90429 !important; filter: drop-shadow(0px 0px 1px #edf2f4); stroke-dasharray: 3; stroke: #00b4d8 !important; stroke-width: 4px !important;}
     </style>
 </head>
 <body>
@@ -186,7 +191,6 @@
     <div id="map-container">
         <div class="inset-label">AK &amp; HI Inset</div>
         <div class="inset-box"></div>
-        
         <div id="map"></div>
     </div>
 
@@ -234,70 +238,36 @@
             "Wisconsin": "Asparagus", "Wyoming": "Salad"
         };
 
-        // Initialize map with coordinate bounds safety triggers turned on
+        // Initialize map
         const map = L.map('map', {
             zoomControl: true,
-            attributionControl: false,
-            crs: L.CRS.EPSG3857 // Ensure strict projection standard
+            attributionControl: false
         }).setView([37.8, -96], 4);
 
-        // Explicitly spin up an SVG canvas element layer to append stripes definitions into
-        const svgRenderer = L.svg({ padding: 0.7 }).addTo(map);
-        const defs = svgRenderer._defs;
-
-        // Dynamic vector pattern generation engine for stripes
-        function addPattern(id, colors) {
-            const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
-            pattern.setAttribute("id", id);
-            pattern.setAttribute("width", "24");
-            pattern.setAttribute("height", "24");
-            pattern.setAttribute("patternUnits", "userSpaceOnUse");
-            pattern.setAttribute("patternTransform", "rotate(45)");
-
-            const widthStep = 24 / colors.length;
-            colors.forEach((color, i) => {
-                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                rect.setAttribute("x", (i * widthStep).toString());
-                rect.setAttribute("y", "0");
-                rect.setAttribute("width", widthStep.toString());
-                rect.setAttribute("height", "24");
-                rect.setAttribute("fill", color);
-                pattern.appendChild(rect);
-            });
-            defs.appendChild(pattern);
-        }
-
-        // Bake the patterns directly into the map engine
-        addPattern("stripe-salad-other", ["#d90429", "#00b4d8"]);
-        addPattern("stripe-chips-other", ["#edf2f4", "#00b4d8"]);
-        addPattern("stripe-salad-chips", ["#d90429", "#edf2f4"]);
-        addPattern("stripe-all", ["#d90429", "#edf2f4", "#00b4d8"]);
-
-        // Mapping engine connecting database tags to colors/patterns
-        function getFillColor(stateName) {
+        // Solid Color Selector (Fallbacks)
+        function getBaseColor(stateName) {
             const cat = stateCategories[stateName];
             if (cat === "Salad Only") return '#d90429';       // Red
             if (cat === "Chips Only") return '#edf2f4';       // White
             if (cat === "Other Only") return '#00b4d8';       // Blue
-            if (cat === "Salad + Other") return 'url(#stripe-salad-other)';
-            if (cat === "Chips + Other") return 'url(#stripe-chips-other)';
-            if (cat === "Salad + Chips") return 'url(#stripe-salad-chips)';
-            if (cat === "Salad + Chips + Other") return 'url(#stripe-all)';
+            if (cat === "Salad + Other") return '#d90429';
+            if (cat === "Chips + Other") return '#edf2f4';
+            if (cat === "Salad + Chips") return '#d90429';
+            if (cat === "Salad + Chips + Other") return '#d90429';
             return '#1c2541';
         }
 
         function styleFeature(feature) {
             return {
-                fillColor: getFillColor(feature.properties.name),
+                fillColor: getBaseColor(feature.properties.name),
                 weight: 1.5,
                 opacity: 1,
-                color: '#0b132b', // Deep seamless border color
-                fillOpacity: 1.0,
-                renderer: svgRenderer
+                color: '#0b132b', 
+                fillOpacity: 1.0
             };
         }
 
-        // Dashboard Metrics Card Panel
+        // Card Panel Overlay
         const info = L.control({position: 'topright'});
         info.onAdd = function () {
             this._div = L.DomUtil.create('div', 'info');
@@ -330,7 +300,6 @@
             layer.on({ mouseover: highlightFeature, mouseout: resetHighlight });
         }
 
-        // Deep multi-dimensional array processor to shift coordinates of specific states
         function transformGeoJSONCoords(coords, type, transformFn) {
             if (type === "Point") return transformFn(coords);
             if (type === "LineString" || type === "MultiPoint") return coords.map(transformFn);
@@ -339,20 +308,17 @@
             return coords;
         }
 
-        // Load GIS assets, physically warp AK/HI, and generate layers
+        // Fetch polygons and manually safely class them via native DOM loops
         fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json')
             .then(res => res.json())
             .then(data => {
                 data.features.forEach(feature => {
                     const name = feature.properties.name;
-                    // Move Alaska down and left to the custom corner bounding frame
                     if (name === "Alaska") {
                         feature.geometry.coordinates = transformGeoJSONCoords(feature.geometry.coordinates, feature.geometry.type, c => {
                             return [(c[0] + 149) * 0.38 - 118.5, (c[1] - 63) * 0.38 + 25.0];
                         });
-                    } 
-                    // Move Hawaii perfectly adjacent to Alaska inside the inset frame
-                    else if (name === "Hawaii") {
+                    } else if (name === "Hawaii") {
                         feature.geometry.coordinates = transformGeoJSONCoords(feature.geometry.coordinates, feature.geometry.type, c => {
                             return [(c[0] + 158) * 1.1 - 112.5, (c[1] - 20) * 1.1 + 22.2];
                         });
@@ -363,12 +329,23 @@
                     style: styleFeature,
                     onEachFeature: onEachFeature
                 }).addTo(map);
-                
-                // Force layout recalculation right after polygons are drawn
-                setTimeout(() => { map.invalidateSize(); }, 200);
+
+                // Safe Native CSS Pattern Mapping Loop (Bypasses caching rules)
+                geojson.eachLayer(layer => {
+                    const name = layer.feature.properties.name;
+                    const cat = stateCategories[name];
+                    const element = layer._path;
+                    
+                    if (element) {
+                        if (cat === "Salad + Other") element.classList.add("pattern-salad-other");
+                        else if (cat === "Chips + Other") element.classList.add("pattern-chips-other");
+                        else if (cat === "Salad + Chips") element.classList.add("pattern-salad-chips");
+                        else if (cat === "Salad + Chips + Other") element.classList.add("pattern-all");
+                    }
+                });
             });
 
-        // Generate Custom Striped/Solid Infographic Legend panel
+        // Legend panel
         const legend = L.control({position: 'bottomright'});
         legend.onAdd = function () {
             const div = L.DomUtil.create('div', 'legend');
