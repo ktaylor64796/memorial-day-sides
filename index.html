@@ -62,7 +62,8 @@
         #map {
             width: 100%;
             height: 100%;
-            background-color: #0b132b !important;
+            /* High-end infographic background gradient */
+            background: radial-gradient(circle, #1c2541 0%, #0b132b 100%) !important;
         }
 
         /* Custom Visual Inset Box Overlay for AK/HI */
@@ -70,8 +71,8 @@
             position: absolute;
             bottom: 20px;
             left: 20px;
-            width: 190px;
-            height: 130px;
+            width: 195px;
+            height: 145px;
             border: 2px dashed #3a506b;
             border-radius: 8px;
             pointer-events: none; /* Let clicks pass through to map elements */
@@ -80,7 +81,7 @@
         }
         .inset-label {
             position: absolute;
-            bottom: 155px;
+            bottom: 170px;
             left: 25px;
             font-size: 0.75rem;
             color: #6c757d;
@@ -233,14 +234,15 @@
             "Wisconsin": "Asparagus", "Wyoming": "Salad"
         };
 
-        // Initialize map tightly bound to continental visual limits
+        // Initialize map with coordinate bounds safety triggers turned on
         const map = L.map('map', {
             zoomControl: true,
-            attributionControl: false
-        }).setView([37.5, -96], 4);
+            attributionControl: false,
+            crs: L.CRS.EPSG3857 // Ensure strict projection standard
+        }).setView([37.8, -96], 4);
 
         // Explicitly spin up an SVG canvas element layer to append stripes definitions into
-        const svgRenderer = L.svg({ padding: 0.5 }).addTo(map);
+        const svgRenderer = L.svg({ padding: 0.7 }).addTo(map);
         const defs = svgRenderer._defs;
 
         // Dynamic vector pattern generation engine for stripes
@@ -346,13 +348,13 @@
                     // Move Alaska down and left to the custom corner bounding frame
                     if (name === "Alaska") {
                         feature.geometry.coordinates = transformGeoJSONCoords(feature.geometry.coordinates, feature.geometry.type, c => {
-                            return [(c[0] + 152) * 0.35 - 120, (c[1] - 64) * 0.35 + 24.5];
+                            return [(c[0] + 149) * 0.38 - 118.5, (c[1] - 63) * 0.38 + 25.0];
                         });
                     } 
                     // Move Hawaii perfectly adjacent to Alaska inside the inset frame
                     else if (name === "Hawaii") {
                         feature.geometry.coordinates = transformGeoJSONCoords(feature.geometry.coordinates, feature.geometry.type, c => {
-                            return [(c[0] + 157) * 1.0 - 112.5, (c[1] - 20) * 1.0 + 22.2];
+                            return [(c[0] + 158) * 1.1 - 112.5, (c[1] - 20) * 1.1 + 22.2];
                         });
                     }
                 });
@@ -361,6 +363,9 @@
                     style: styleFeature,
                     onEachFeature: onEachFeature
                 }).addTo(map);
+                
+                // Force layout recalculation right after polygons are drawn
+                setTimeout(() => { map.invalidateSize(); }, 200);
             });
 
         // Generate Custom Striped/Solid Infographic Legend panel
@@ -374,7 +379,7 @@
             div.innerHTML += '<div><i class="legend-color swatch-salad-other"></i> Stripes: Salad + Other</div>';
             div.innerHTML += '<div><i class="legend-color swatch-chips-other"></i> Stripes: Chips + Other</div>';
             div.innerHTML += '<div><i class="legend-color swatch-salad-chips"></i> Stripes: Salad + Chips</div>';
-            div.innerHTML += '<div><i class="legend-color swatch-all"></i> Stripes: All Three Categories Tied</div>';
+            div.innerHTML += '<div><i class="legend-color swatch-all"></i> Stripes: All Categories Tied</div>';
             return div;
         };
         legend.addTo(map);
