@@ -78,16 +78,6 @@
             z-index: 1000;
             background: rgba(28, 37, 65, 0.2);
         }
-        .inset-label {
-            position: absolute;
-            bottom: 170px;
-            left: 25px;
-            font-size: 0.75rem;
-            color: #6c757d;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            z-index: 1000;
-        }
 
         /* Hover Detail Card */
         .info {
@@ -144,7 +134,7 @@
             padding-bottom: 4px;
         }
         
-        /* CSS Legend Pattern Swatches */
+        /* CSS Legend Pattern Swatches matching SVG patterns */
         .legend-color {
             width: 18px;
             height: 18px;
@@ -173,12 +163,6 @@
             background: linear-gradient(45deg, #d90429 16.6%, #edf2f4 16.6%, #edf2f4 33.3%, #00b4d8 33.3%, #00b4d8 50%, #d90429 50%, #d90429 66.6%, #edf2f4 66.6%, #edf2f4 83.3%, #00b4d8 83.3%);
             background-size: 12px 12px;
         }
-
-        /* Pure CSS Pattern engine classes to bypass the SVG cache block entirely */
-        .pattern-salad-other { fill: #d90429 !important; filter: drop-shadow(0px 0px 1px #00b4d8); stroke-dasharray: 4; stroke: #00b4d8 !important; stroke-width: 3px !important;}
-        .pattern-chips-other { fill: #edf2f4 !important; filter: drop-shadow(0px 0px 1px #00b4d8); stroke-dasharray: 4; stroke: #00b4d8 !important; stroke-width: 3px !important;}
-        .pattern-salad-chips { fill: #d90429 !important; filter: drop-shadow(0px 0px 1px #edf2f4); stroke-dasharray: 4; stroke: #edf2f4 !important; stroke-width: 3px !important;}
-        .pattern-all { fill: #d90429 !important; filter: drop-shadow(0px 0px 1px #edf2f4); stroke-dasharray: 3; stroke: #00b4d8 !important; stroke-width: 4px !important;}
     </style>
 </head>
 <body>
@@ -189,14 +173,13 @@
     </header>
 
     <div id="map-container">
-        <div class="inset-label">AK &amp; HI Inset</div>
         <div class="inset-box"></div>
         <div id="map"></div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Exact dataset categorization derived directly from your file
+        // Data categories derived directly from your CSV
         const stateCategories = {
             "Alabama": "Chips Only", "Alaska": "Salad + Other", "Arizona": "Salad Only",
             "Arkansas": "Salad + Chips + Other", "California": "Salad Only", "Colorado": "Salad Only",
@@ -244,30 +227,63 @@
             attributionControl: false
         }).setView([37.8, -96], 4);
 
-        // Solid Color Selector (Fallbacks)
-        function getBaseColor(stateName) {
+        // Force Leaflet to render shapes as an SVG document overlay
+        const svgRenderer = L.svg({ padding: 0.5 }).addTo(map);
+        const defs = svgRenderer._defs;
+
+        // Custom SVG pattern creation script for vector stripes
+        function makeSVGPattern(id, colors) {
+            const p = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
+            p.setAttribute("id", id);
+            p.setAttribute("width", "20");
+            p.setAttribute("height", "20");
+            p.setAttribute("patternUnits", "userSpaceOnUse");
+            p.setAttribute("patternTransform", "rotate(45)");
+
+            const step = 20 / colors.length;
+            colors.forEach((col, idx) => {
+                const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                r.setAttribute("x", (idx * step).toString());
+                r.setAttribute("y", "0");
+                r.setAttribute("width", step.toString());
+                r.setAttribute("height", "20");
+                r.setAttribute("fill", col);
+                p.appendChild(r);
+            });
+            defs.appendChild(p);
+        }
+
+        // Initialize dynamic vector patterns inside Leaflet's SVG workspace
+        makeSVGPattern("pat-salad-other", ["#d90429", "#00b4d8"]);
+        makeSVGPattern("pat-chips-other", ["#edf2f4", "#00b4d8"]);
+        makeSVGPattern("pat-salad-chips", ["#d90429", "#edf2f4"]);
+        makeSVGPattern("pat-all", ["#d90429", "#edf2f4", "#00b4d8"]);
+
+        // Return solid color or reference the corresponding SVG pattern ID
+        function getFillStyle(stateName) {
             const cat = stateCategories[stateName];
             if (cat === "Salad Only") return '#d90429';       // Red
             if (cat === "Chips Only") return '#edf2f4';       // White
             if (cat === "Other Only") return '#00b4d8';       // Blue
-            if (cat === "Salad + Other") return '#d90429';
-            if (cat === "Chips + Other") return '#edf2f4';
-            if (cat === "Salad + Chips") return '#d90429';
-            if (cat === "Salad + Chips + Other") return '#d90429';
+            if (cat === "Salad + Other") return 'url(#pat-salad-other)';
+            if (cat === "Chips + Other") return 'url(#pat-chips-other)';
+            if (cat === "Salad + Chips") return 'url(#pat-salad-chips)';
+            if (cat === "Salad + Chips + Other") return 'url(#pat-all)';
             return '#1c2541';
         }
 
         function styleFeature(feature) {
             return {
-                fillColor: getBaseColor(feature.properties.name),
+                fillColor: getFillStyle(feature.properties.name),
                 weight: 1.5,
                 opacity: 1,
-                color: '#0b132b', 
-                fillOpacity: 1.0
+                color: '#0b132b', // Deep backdrop bounding border color
+                fillOpacity: 1.0,
+                renderer: svgRenderer
             };
         }
 
-        // Card Panel Overlay
+        // Information Metrics Panel
         const info = L.control({position: 'topright'});
         info.onAdd = function () {
             this._div = L.DomUtil.create('div', 'info');
@@ -308,7 +324,7 @@
             return coords;
         }
 
-        // Fetch polygons and manually safely class them via native DOM loops
+        // Load US data and mathematically shift AK / HI inside the frame bounds
         fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json')
             .then(res => res.json())
             .then(data => {
@@ -329,20 +345,6 @@
                     style: styleFeature,
                     onEachFeature: onEachFeature
                 }).addTo(map);
-
-                // Safe Native CSS Pattern Mapping Loop (Bypasses caching rules)
-                geojson.eachLayer(layer => {
-                    const name = layer.feature.properties.name;
-                    const cat = stateCategories[name];
-                    const element = layer._path;
-                    
-                    if (element) {
-                        if (cat === "Salad + Other") element.classList.add("pattern-salad-other");
-                        else if (cat === "Chips + Other") element.classList.add("pattern-chips-other");
-                        else if (cat === "Salad + Chips") element.classList.add("pattern-salad-chips");
-                        else if (cat === "Salad + Chips + Other") element.classList.add("pattern-all");
-                    }
-                });
             });
 
         // Legend panel
