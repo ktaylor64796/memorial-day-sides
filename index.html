@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorial Day Side Dishes Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            background-color: #f7f9fa;
+        }
+        #map {
+            width: 100vw;
+            height: 100vh;
+        }
+        .info {
+            padding: 12px 15px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            color: #333;
+        }
+        .info h4 {
+            margin: 0 0 5px;
+            color: #1a2a6c;
+        }
+        .legend {
+            line-height: 18px;
+            color: #555;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.8;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map centered on the US
+        const map = L.map('map').setView([37.8, -96], 4);
+
+        // Add a clean, minimal background map layer
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+        }).addTo(map);
+
+        // Your clean Memorial Day side dish dataset
+        const sideDishData = {
+            "Alabama": "Potato Chips", "Alaska": "Macaroni Salad, Salad", "Arizona": "Salad",
+            "Arkansas": "Nachos, Potato Chips, Salad", "California": "Salad", "Colorado": "Salad",
+            "Connecticut": "Salad", "Delaware": "Salad", "Florida": "Salad", "Georgia": "Salad",
+            "Hawaii": "Salad", "Idaho": "Asparagus, Cowboy Caviar, Potato Chips, Salad",
+            "Illinois": "Salad", "Indiana": "Potato Chips", "Iowa": "Asparagus",
+            "Kansas": "Potato Chips, Salad", "Kentucky": "Potato Chips", "Louisiana": "Salad",
+            "Maine": "Buffalo Chicken Dip, Potato Chips, Salad", "Maryland": "Salad",
+            "Massachusetts": "Salad", "Michigan": "Asparagus, Potato Chips, Salad",
+            "Minnesota": "Asparagus, Salad", "Mississippi": "Potato Chips, Salad",
+            "Missouri": "Potato Chips", "Montana": "Cowboy Caviar, Elote, Macaroni Salad, Potato Chips, Salad",
+            "Nebraska": "Asparagus", "Nevada": "Salad", "New Hampshire": "Potato Chips",
+            "New Jersey": "Salad", "New Mexico": "Salad", "New York": "Salad",
+            "North Carolina": "Salad", "North Dakota": "Cowboy Caviar", "Ohio": "Potato Chips",
+            "Oklahoma": "Elote, Potato Chips", "Oregon": "Salad", "Pennsylvania": "Buffalo Chicken Dip, Salad",
+            "Rhode Island": "Salad", "South Carolina": "Salad", "South Dakota": "Asparagus",
+            "Tennessee": "Potato Chips, Salad", "Texas": "Salad", "Utah": "Salad",
+            "Vermont": "Asparagus, Macaroni Salad, Potato Salad", "Virginia": "Salad",
+            "Washington": "Salad", "West Virginia": "Buffalo Chicken Dip, Potato Chips",
+            "Wisconsin": "Asparagus", "Wyoming": "Salad"
+        };
+
+        // Assign Red, White, and Blue theme based on dishes
+        function getColor(dish) {
+            if (!dish) return '#e0e0e0';
+            if (dish.includes("Salad") && !dish.includes("Macaroni") && !dish.includes("Potato Salad")) {
+                return '#b30000'; // Red for Salad dominance
+            }
+            if (dish === "Potato Chips") {
+                return '#f7f7f7'; // White/Light Gray for Potato Chips
+            }
+            return '#0a2342'; // Dark Navy Blue for all other unique regional specialties
+        }
+
+        // Handle styling for each state boundary
+        function style(feature) {
+            const stateName = feature.properties.name;
+            const dish = sideDishData[stateName];
+            return {
+                fillColor: getColor(dish),
+                weight: 1.5,
+                opacity: 1,
+                color: '#666',
+                fillOpacity: 0.85
+            };
+        }
+
+        // Interactive hover effects
+        const info = L.control();
+
+        info.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+
+        info.update = function (props) {
+            this._div.innerHTML = '<h4>🇺🇸 Memorial Day Top Sides</h4>' +  (props ?
+                '<b>' + props.name + '</b><br />' + (sideDishData[props.name] || 'No data') : 'Hover over a state');
+        };
+
+        info.addTo(map);
+
+        function highlightFeature(e) {
+            const layer = e.target;
+            layer.setStyle({
+                weight: 3,
+                color: '#333',
+                fillOpacity: 0.95
+            });
+            layer.bringToFront();
+            info.update(layer.feature.properties);
+        }
+
+        let geojson;
+
+        function resetHighlight(e) {
+            geojson.resetStyle(e.target);
+            info.update();
+        }
+
+        function onEachFeature(feature, layer) {
+            layer.on({
+                mouseover: highlightFeature,
+                mouseout: resetHighlight
+            });
+        }
+
+        // Fetch US State GeoJSON boundaries directly and plot them
+        fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json')
+            .then(response => response.json())
+            .then(data => {
+                geojson = L.geoJson(data, {
+                    style: style,
+                    onEachFeature: onEachFeature
+                }).addTo(map);
+            });
+
+        // Add Legend to the Map
+        const legend = L.control({position: 'bottomright'});
+
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            const categories = [
+                { name: 'Salad Dominance', color: '#b30000' },
+                { name: 'Potato Chips', color: '#f7f7f7' },
+                { name: 'Regional Specialty (Dip, Corn, Veggies)', color: '#0a2342' }
+            ];
+
+            div.innerHTML += '<strong>Theme Key</strong><br>';
+            categories.forEach(cat => {
+                div.innerHTML += `<i style="background: ${cat.color}"></i> ${cat.name}<br>`;
+            });
+            return div;
+        };
+
+        legend.addTo(map);
+    </script>
+</body>
+</html>
