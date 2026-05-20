@@ -3,66 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memorial Day Side Dishes Map</title>
+    <title>Infographic: Memorial Day Sides</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
-            background-color: #f7f9fa;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #0b132b; /* Midnight Blue Background */
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Premium Infographic Header */
+        header {
+            text-align: center;
+            padding: 24px 10px;
+            width: 100%;
+            background: linear-gradient(135deg, #1c2541 0%, #0b132b 100%);
+            box-shadow: 0 4px 25px rgba(0,0,0,0.6);
+            z-index: 10;
+            border-bottom: 2px solid #1c2541;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #ff4d4d, #ffffff, #3385ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        header p {
+            margin: 6px 0 0 0;
+            color: #a5a9b4;
+            font-size: 1rem;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Map Workspace */
+        #map-container {
+            position: relative;
+            width: 95vw;
+            height: 76vh;
+            margin-top: 20px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            border: 2px solid #1c2541;
         }
         #map {
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
+            background-color: #0b132b !important;
         }
+
+        /* Custom Visual Inset Box Overlay for AK/HI */
+        .inset-box {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 190px;
+            height: 130px;
+            border: 2px dashed #3a506b;
+            border-radius: 8px;
+            pointer-events: none; /* Let clicks pass through to map elements */
+            z-index: 1000;
+            background: rgba(28, 37, 65, 0.2);
+        }
+        .inset-label {
+            position: absolute;
+            bottom: 155px;
+            left: 25px;
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 1000;
+        }
+
+        /* Hover Detail Card */
         .info {
-            padding: 12px 15px;
-            font: 14px/16px Arial, Helvetica, sans-serif;
-            background: white;
-            background: rgba(255,255,255,0.9);
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            border-radius: 5px;
-            color: #333;
+            padding: 15px 20px;
+            font-size: 14px;
+            background: #1c2541;
+            border: 2px solid #3a506b;
+            border-radius: 12px;
+            color: #ffffff;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            min-width: 220px;
         }
         .info h4 {
-            margin: 0 0 5px;
-            color: #1a2a6c;
+            margin: 0 0 6px 0;
+            color: #ff4d4d;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
         }
+        .info .state-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        .info .dish-tag {
+            font-size: 0.8rem;
+            color: #a5a9b4;
+            margin-bottom: 2px;
+        }
+        .info .dish-name {
+            color: #5bc0be;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* Legend Layout */
         .legend {
-            line-height: 18px;
-            color: #555;
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            background: #1c2541;
+            border: 2px solid #3a506b;
+            padding: 16px;
+            border-radius: 12px;
+            color: #ffffff;
+            line-height: 26px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
         }
-        .legend i {
+        .legend strong {
+            display: block;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1.5px;
+            color: #a5a9b4;
+            border-bottom: 1px solid #3a506b;
+            padding-bottom: 4px;
+        }
+        
+        /* CSS Legend Pattern Swatches to match SVG precisely */
+        .legend-color {
             width: 18px;
             height: 18px;
             float: left;
-            margin-right: 8px;
-            opacity: 0.8;
-            border: 1px solid #ccc;
+            margin-right: 12px;
+            margin-top: 4px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .swatch-salad { background-color: #d90429; }
+        .swatch-chips { background-color: #edf2f4; }
+        .swatch-other { background-color: #00b4d8; }
+        .swatch-salad-other {
+            background: linear-gradient(45deg, #d90429 25%, #00b4d8 25%, #00b4d8 50%, #d90429 50%, #d90429 75%, #00b4d8 75%, #00b4d8 100%);
+            background-size: 8px 8px;
+        }
+        .swatch-chips-other {
+            background: linear-gradient(45deg, #edf2f4 25%, #00b4d8 25%, #00b4d8 50%, #edf2f4 50%, #edf2f4 75%, #00b4d8 75%, #00b4d8 100%);
+            background-size: 8px 8px;
+        }
+        .swatch-salad-chips {
+            background: linear-gradient(45deg, #d90429 25%, #edf2f4 25%, #edf2f4 50%, #d90429 50%, #d90429 75%, #edf2f4 75%, #edf2f4 100%);
+            background-size: 8px 8px;
+        }
+        .swatch-all {
+            background: linear-gradient(45deg, #d90429 16.6%, #edf2f4 16.6%, #edf2f4 33.3%, #00b4d8 33.3%, #00b4d8 50%, #d90429 50%, #d90429 66.6%, #edf2f4 66.6%, #edf2f4 83.3%, #00b4d8 83.3%);
+            background-size: 12px 12px;
         }
     </style>
 </head>
 <body>
 
-    <div id="map"></div>
+    <header>
+        <h1>The Memorial Day Menu</h1>
+        <p>National Side Dish Map • Red, White, &amp; Blue Edition</p>
+    </header>
+
+    <div id="map-container">
+        <div class="inset-label">AK &amp; HI Inset</div>
+        <div class="inset-box"></div>
+        
+        <div id="map"></div>
+    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialize the map centered on the US
-        const map = L.map('map').setView([37.8, -96], 4);
+        // Exact dataset categorization derived directly from your file
+        const stateCategories = {
+            "Alabama": "Chips Only", "Alaska": "Salad + Other", "Arizona": "Salad Only",
+            "Arkansas": "Salad + Chips + Other", "California": "Salad Only", "Colorado": "Salad Only",
+            "Connecticut": "Salad Only", "Delaware": "Salad Only", "Florida": "Salad Only",
+            "Georgia": "Salad Only", "Hawaii": "Salad Only", "Idaho": "Salad + Chips + Other",
+            "Illinois": "Salad Only", "Indiana": "Chips Only", "Iowa": "Other Only",
+            "Kansas": "Salad + Chips", "Kentucky": "Chips Only", "Louisiana": "Salad Only",
+            "Maine": "Salad + Chips + Other", "Maryland": "Salad Only", "Massachusetts": "Salad Only",
+            "Michigan": "Salad + Chips + Other", "Minnesota": "Salad + Other", "Mississippi": "Salad + Chips",
+            "Missouri": "Chips Only", "Montana": "Salad + Chips + Other", "Nebraska": "Other Only",
+            "Nevada": "Salad Only", "New Hampshire": "Chips Only", "New Jersey": "Salad Only",
+            "New Mexico": "Salad Only", "New York": "Salad Only", "North Carolina": "Salad Only",
+            "North Dakota": "Other Only", "Ohio": "Chips Only", "Oklahoma": "Chips + Other",
+            "Oregon": "Salad Only", "Pennsylvania": "Salad + Other", "Rhode Island": "Salad Only",
+            "South Carolina": "Salad Only", "South Dakota": "Other Only", "Tennessee": "Salad + Chips",
+            "Texas": "Salad Only", "Utah": "Salad Only", "Vermont": "Other Only", "Virginia": "Salad Only",
+            "Washington": "Salad Only", "West Virginia": "Chips + Other", "Wisconsin": "Other Only", "Wyoming": "Salad Only"
+        };
 
-        // Add a clean, minimal background map layer
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-        }).addTo(map);
-
-        // Your clean Memorial Day side dish dataset
-        const sideDishData = {
+        const stateDishes = {
             "Alabama": "Potato Chips", "Alaska": "Macaroni Salad, Salad", "Arizona": "Salad",
             "Arkansas": "Nachos, Potato Chips, Salad", "California": "Salad", "Colorado": "Salad",
             "Connecticut": "Salad", "Delaware": "Salad", "Florida": "Salad", "Georgia": "Salad",
@@ -84,100 +233,150 @@
             "Wisconsin": "Asparagus", "Wyoming": "Salad"
         };
 
-        // Assign Red, White, and Blue theme based on dishes
-        function getColor(dish) {
-            if (!dish) return '#e0e0e0';
-            if (dish.includes("Salad") && !dish.includes("Macaroni") && !dish.includes("Potato Salad")) {
-                return '#b30000'; // Red for Salad dominance
-            }
-            if (dish === "Potato Chips") {
-                return '#f7f7f7'; // White/Light Gray for Potato Chips
-            }
-            return '#0a2342'; // Dark Navy Blue for all other unique regional specialties
+        // Initialize map tightly bound to continental visual limits
+        const map = L.map('map', {
+            zoomControl: true,
+            attributionControl: false
+        }).setView([37.5, -96], 4);
+
+        // Explicitly spin up an SVG canvas element layer to append stripes definitions into
+        const svgRenderer = L.svg({ padding: 0.5 }).addTo(map);
+        const defs = svgRenderer._defs;
+
+        // Dynamic vector pattern generation engine for stripes
+        function addPattern(id, colors) {
+            const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
+            pattern.setAttribute("id", id);
+            pattern.setAttribute("width", "24");
+            pattern.setAttribute("height", "24");
+            pattern.setAttribute("patternUnits", "userSpaceOnUse");
+            pattern.setAttribute("patternTransform", "rotate(45)");
+
+            const widthStep = 24 / colors.length;
+            colors.forEach((color, i) => {
+                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute("x", (i * widthStep).toString());
+                rect.setAttribute("y", "0");
+                rect.setAttribute("width", widthStep.toString());
+                rect.setAttribute("height", "24");
+                rect.setAttribute("fill", color);
+                pattern.appendChild(rect);
+            });
+            defs.appendChild(pattern);
         }
 
-        // Handle styling for each state boundary
-        function style(feature) {
-            const stateName = feature.properties.name;
-            const dish = sideDishData[stateName];
+        // Bake the patterns directly into the map engine
+        addPattern("stripe-salad-other", ["#d90429", "#00b4d8"]);
+        addPattern("stripe-chips-other", ["#edf2f4", "#00b4d8"]);
+        addPattern("stripe-salad-chips", ["#d90429", "#edf2f4"]);
+        addPattern("stripe-all", ["#d90429", "#edf2f4", "#00b4d8"]);
+
+        // Mapping engine connecting database tags to colors/patterns
+        function getFillColor(stateName) {
+            const cat = stateCategories[stateName];
+            if (cat === "Salad Only") return '#d90429';       // Red
+            if (cat === "Chips Only") return '#edf2f4';       // White
+            if (cat === "Other Only") return '#00b4d8';       // Blue
+            if (cat === "Salad + Other") return 'url(#stripe-salad-other)';
+            if (cat === "Chips + Other") return 'url(#stripe-chips-other)';
+            if (cat === "Salad + Chips") return 'url(#stripe-salad-chips)';
+            if (cat === "Salad + Chips + Other") return 'url(#stripe-all)';
+            return '#1c2541';
+        }
+
+        function styleFeature(feature) {
             return {
-                fillColor: getColor(dish),
+                fillColor: getFillColor(feature.properties.name),
                 weight: 1.5,
                 opacity: 1,
-                color: '#666',
-                fillOpacity: 0.85
+                color: '#0b132b', // Deep seamless border color
+                fillOpacity: 1.0,
+                renderer: svgRenderer
             };
         }
 
-        // Interactive hover effects
-        const info = L.control();
-
-        info.onAdd = function (map) {
+        // Dashboard Metrics Card Panel
+        const info = L.control({position: 'topright'});
+        info.onAdd = function () {
             this._div = L.DomUtil.create('div', 'info');
             this.update();
             return this._div;
         };
-
         info.update = function (props) {
-            this._div.innerHTML = '<h4>🇺🇸 Memorial Day Top Sides</h4>' +  (props ?
-                '<b>' + props.name + '</b><br />' + (sideDishData[props.name] || 'No data') : 'Hover over a state');
+            this._div.innerHTML = '<h4>Menu Tracking</h4>' + (props ?
+                `<div class="state-name">${props.name}</div>
+                 <div class="dish-tag">Top #1 Memorial Day Sides:</div>
+                 <div class="dish-name">🇺🇸 ${stateDishes[props.name] || 'No Records'}</div>` : 
+                '<span style="color:#6c757d">Hover over a state</span>');
         };
-
         info.addTo(map);
 
         function highlightFeature(e) {
             const layer = e.target;
-            layer.setStyle({
-                weight: 3,
-                color: '#333',
-                fillOpacity: 0.95
-            });
+            layer.setStyle({ weight: 3, color: '#ffffff' });
             layer.bringToFront();
             info.update(layer.feature.properties);
         }
 
         let geojson;
-
         function resetHighlight(e) {
             geojson.resetStyle(e.target);
             info.update();
         }
 
         function onEachFeature(feature, layer) {
-            layer.on({
-                mouseover: highlightFeature,
-                mouseout: resetHighlight
-            });
+            layer.on({ mouseover: highlightFeature, mouseout: resetHighlight });
         }
 
-        // Fetch US State GeoJSON boundaries directly and plot them
+        // Deep multi-dimensional array processor to shift coordinates of specific states
+        function transformGeoJSONCoords(coords, type, transformFn) {
+            if (type === "Point") return transformFn(coords);
+            if (type === "LineString" || type === "MultiPoint") return coords.map(transformFn);
+            if (type === "Polygon" || type === "MultiLineString") return coords.map(r => r.map(transformFn));
+            if (type === "MultiPolygon") return coords.map(p => p.map(r => r.map(transformFn)));
+            return coords;
+        }
+
+        // Load GIS assets, physically warp AK/HI, and generate layers
         fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json')
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
+                data.features.forEach(feature => {
+                    const name = feature.properties.name;
+                    // Move Alaska down and left to the custom corner bounding frame
+                    if (name === "Alaska") {
+                        feature.geometry.coordinates = transformGeoJSONCoords(feature.geometry.coordinates, feature.geometry.type, c => {
+                            return [(c[0] + 152) * 0.35 - 120, (c[1] - 64) * 0.35 + 24.5];
+                        });
+                    } 
+                    // Move Hawaii perfectly adjacent to Alaska inside the inset frame
+                    else if (name === "Hawaii") {
+                        feature.geometry.coordinates = transformGeoJSONCoords(feature.geometry.coordinates, feature.geometry.type, c => {
+                            return [(c[0] + 157) * 1.0 - 112.5, (c[1] - 20) * 1.0 + 22.2];
+                        });
+                    }
+                });
+
                 geojson = L.geoJson(data, {
-                    style: style,
+                    style: styleFeature,
                     onEachFeature: onEachFeature
                 }).addTo(map);
             });
 
-        // Add Legend to the Map
+        // Generate Custom Striped/Solid Infographic Legend panel
         const legend = L.control({position: 'bottomright'});
-
-        legend.onAdd = function (map) {
-            const div = L.DomUtil.create('div', 'info legend');
-            const categories = [
-                { name: 'Salad Dominance', color: '#b30000' },
-                { name: 'Potato Chips', color: '#f7f7f7' },
-                { name: 'Regional Specialty (Dip, Corn, Veggies)', color: '#0a2342' }
-            ];
-
-            div.innerHTML += '<strong>Theme Key</strong><br>';
-            categories.forEach(cat => {
-                div.innerHTML += `<i style="background: ${cat.color}"></i> ${cat.name}<br>`;
-            });
+        legend.onAdd = function () {
+            const div = L.DomUtil.create('div', 'legend');
+            div.innerHTML += '<strong>Color &amp; Striping Key</strong>';
+            div.innerHTML += '<div><i class="legend-color swatch-salad"></i> Red: Salad Only</div>';
+            div.innerHTML += '<div><i class="legend-color swatch-chips"></i> White: Potato Chips Only</div>';
+            div.innerHTML += '<div><i class="legend-color swatch-other"></i> Blue: Other Only (Dip, Veggies)</div>';
+            div.innerHTML += '<div><i class="legend-color swatch-salad-other"></i> Stripes: Salad + Other</div>';
+            div.innerHTML += '<div><i class="legend-color swatch-chips-other"></i> Stripes: Chips + Other</div>';
+            div.innerHTML += '<div><i class="legend-color swatch-salad-chips"></i> Stripes: Salad + Chips</div>';
+            div.innerHTML += '<div><i class="legend-color swatch-all"></i> Stripes: All Three Categories Tied</div>';
             return div;
         };
-
         legend.addTo(map);
     </script>
 </body>
