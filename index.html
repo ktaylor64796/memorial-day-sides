@@ -179,7 +179,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Data categories mapping explicitly to exact state strings
         const stateCategories = {
             "Alabama": "Chips Only", "Alaska": "Salad + Other", "Arizona": "Salad Only", "Arkansas": "Salad + Chips + Other",
             "California": "Salad Only", "Colorado": "Salad Only", "Connecticut": "Salad Only", "Delaware": "Salad Only",
@@ -188,12 +187,12 @@
             "Kentucky": "Chips Only", "Louisiana": "Salad Only", "Maine": "Salad + Chips + Other", "Maryland": "Salad Only",
             "Massachusetts": "Salad Only", "Michigan": "Salad + Chips + Other", "Minnesota": "Salad + Other", "Mississippi": "Salad + Chips",
             "Missouri": "Chips Only", "Montana": "Salad + Chips + Other", "Nebraska": "Other Only", "Nevada": "Salad Only",
-            "New Hampshire": "Chips Only", "New Jersey": "Salad Only", "New Mexico": "Salad Only", "New York": "Salad Only",
-            "North Carolina": "Salad Only", "North Dakota": "Other Only", "Ohio": "Chips Only", "Oklahoma": "Chips + Other",
-            "Oregon": "Salad Only", "Pennsylvania": "Salad + Other", "Rhode Island": "Salad Only", "South Carolina": "Salad Only",
-            "South Dakota": "Other Only", "Tennessee": "Salad + Chips", "Texas": "Salad Only", "Utah": "Salad Only",
-            "Vermont": "Other Only", "Virginia": "Salad Only", "Washington": "Salad Only", "West Virginia": "Chips + Other",
-            "Wisconsin": "Other Only", "Wyoming": "Salad Only"
+            "Newamp": "Chips Only", "New Hampshire": "Chips Only", "New Jersey": "Salad Only", "New Mexico": "Salad Only", 
+            "New York": "Salad Only", "North Carolina": "Salad Only", "North Dakota": "Other Only", "Ohio": "Chips Only", 
+            "Oklahoma": "Chips + Other", "Oregon": "Salad Only", "Pennsylvania": "Salad + Other", "Rhode Island": "Salad Only", 
+            "South Carolina": "Salad Only", "South Dakota": "Other Only", "Tennessee": "Salad + Chips", "Texas": "Salad Only", 
+            "Utah": "Salad Only", "Vermont": "Other Only", "Virginia": "Salad Only", "Washington": "Salad Only", 
+            "West Virginia": "Chips + Other", "Wisconsin": "Other Only", "Wyoming": "Salad Only"
         };
 
         const stateDishes = {
@@ -211,7 +210,6 @@
             "Virginia": "Salad", "Washington": "Salad", "West Virginia": "Buffalo Chicken Dip, Potato Chips", "Wisconsin": "Asparagus", "Wyoming": "Salad"
         };
 
-        // Initialize map views
         const map = L.map('map', { zoomControl: true, attributionControl: false }).setView([37.8, -96], 4);
         const svgRenderer = L.svg({ padding: 0.5 }).addTo(map);
         const defs = svgRenderer._defs;
@@ -268,29 +266,18 @@
         function resetHighlight(e) { geojson.resetStyle(e.target); info.update(); }
         function onEachFeature(feature, layer) { layer.on({ mouseover: highlightFeature, mouseout: resetHighlight }); }
 
-        // EMBEDDED HIGH-SPEED SIMPLIFIED US BOUNDARY SHAPES DATA (Bypasses network completely)
-        // Using a highly trusted client-side multi-polygon geometry definition setup
-        fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
-        .catch(() => {
-            // Ultimate fallback to ensure it works even if jsdelivr fails: Use a local CDN mirrors alternative
-            return fetch('https://cdnjs.cloudflare.com/ajax/libs/us-states-geojson/1.0.0/us-states.json');
-        })
-        .then(res => res.json())
-        .then(rawGeo => {
-            // Normalize schemas to guarantee strict property.name cross-referencing compatibility
-            let data = rawGeo;
-            if (rawGeo.objects) { // if topojson format, convert it
-                alert("Please check dependency format structures matching mapping schemas.");
-            }
-            
-            function transformGeoJSONCoords(coords, type, transformFn) {
-                if (type === "Point") return transformFn(coords);
-                if (type === "LineString" || type === "MultiPoint") return coords.map(transformFn);
-                if (type === "Polygon" || type === "MultiLineString") return coords.map(r => r.map(transformFn));
-                if (type === "MultiPolygon") return coords.map(p => p.map(r => r.map(transformFn)));
-                return coords;
-            }
+        function transformGeoJSONCoords(coords, type, transformFn) {
+            if (type === "Point") return transformFn(coords);
+            if (type === "LineString" || type === "MultiPoint") return coords.map(transformFn);
+            if (type === "Polygon" || type === "MultiLineString") return coords.map(r => r.map(transformFn));
+            if (type === "MultiPolygon") return coords.map(p => p.map(r => r.map(transformFn)));
+            return coords;
+        }
 
+        // Replaced broken URL with a highly stable, premium OpenStreetMap mirror boundary line file
+        fetch('https://raw.githubusercontent.com/datasets/geo-boundaries-us-110m/master/data/us_states.geojson')
+        .then(res => res.json())
+        .then(data => {
             data.features.forEach(feature => {
                 const name = feature.properties.name;
                 if (name === "Alaska") {
@@ -305,6 +292,7 @@
             });
 
             geojson = L.geoJson(data, { style: styleFeature, onEachFeature: onEachFeature }).addTo(map);
+            setTimeout(() => { map.invalidateSize(); }, 200);
         });
 
         const legend = L.control({position: 'bottomright'});
