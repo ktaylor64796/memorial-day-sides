@@ -4,19 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Infographic: Memorial Day Sides</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body {
             margin: 0;
             padding: 0;
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #0b132b; /* Midnight Blue Background */
+            background-color: #0b132b; /* Midnight Blue */
             color: #ffffff;
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
         }
         
         /* Premium Infographic Header */
@@ -48,120 +46,141 @@
             letter-spacing: 2px;
         }
 
-        /* Map Workspace */
-        #map-container {
-            position: relative;
+        /* Container Layout Split */
+        .infographic-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 40px;
+            max-width: 1300px;
             width: 95vw;
-            height: 76vh;
-            margin-top: 20px;
+            margin: 30px 0;
+        }
+
+        /* Grid Map Framework */
+        .grid-map {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 6px;
+            width: 780px;
+            height: 520px;
+            background: rgba(28, 37, 65, 0.3);
+            padding: 15px;
             border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
             border: 2px solid #1c2541;
-        }
-        #map {
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, #1c2541 0%, #0b132b 100%) !important;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            position: relative;
         }
 
-        /* Custom Visual Inset Box Overlay for AK/HI */
-        .inset-box {
+        /* Custom Inset Bounding Border for AK/HI */
+        .inset-boundary {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            width: 195px;
-            height: 145px;
+            bottom: 12px;
+            left: 12px;
+            width: 130px;
+            height: 130px;
             border: 2px dashed #3a506b;
-            border-radius: 8px;
+            border-radius: 12px;
             pointer-events: none;
-            z-index: 1000;
-            background: rgba(28, 37, 65, 0.2);
         }
 
-        /* Hover Detail Card */
-        .info {
-            padding: 15px 20px;
-            font-size: 14px;
-            background: #1c2541;
-            border: 2px solid #3a506b;
-            border-radius: 12px;
-            color: #ffffff;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-            min-width: 220px;
-        }
-        .info h4 {
-            margin: 0 0 6px 0;
-            color: #ff4d4d;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 1.5px;
-        }
-        .info .state-name {
-            font-size: 1.5rem;
+        /* State Block Base Styles */
+        .state-block {
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             font-weight: bold;
-            margin-bottom: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid rgba(11, 19, 43, 0.4);
+            position: relative;
         }
-        .info .dish-tag {
-            font-size: 0.8rem;
-            color: #a5a9b4;
-            margin-bottom: 2px;
+        .state-block:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px #ffffff;
+            z-index: 100;
         }
-        .info .dish-name {
-            color: #5bc0be;
-            font-size: 1.1rem;
-            font-weight: 600;
+        .state-block span {
+            font-size: 10px;
+            opacity: 0.7;
+            font-weight: normal;
+            margin-top: 2px;
         }
 
-        /* Legend Layout */
-        .legend {
+        /* Solid Color Classes */
+        .cat-salad { background-color: #d90429; color: #ffffff; }
+        .cat-chips { background-color: #edf2f4; color: #0b132b; }
+        .cat-other { background-color: #00b4d8; color: #ffffff; }
+
+        /* Striped Pattern Engines (Pure CSS) */
+        .cat-salad-other {
+            background: linear-gradient(45deg, #d90429 25%, #00b4d8 25%, #00b4d8 50%, #d90429 50%, #d90429 75%, #00b4d8 75%, #00b4d8 100%);
+            background-size: 12px 12px;
+            color: #ffffff;
+            text-shadow: 1px 1px 3px #000;
+        }
+        .cat-chips-other {
+            background: linear-gradient(45deg, #edf2f4 25%, #00b4d8 25%, #00b4d8 50%, #edf2f4 50%, #edf2f4 75%, #00b4d8 75%, #00b4d8 100%);
+            background-size: 12px 12px;
+            color: #0b132b;
+            text-shadow: 1px 1px 2px #fff;
+        }
+        .cat-salad-chips {
+            background: linear-gradient(45deg, #d90429 25%, #edf2f4 25%, #edf2f4 50%, #d90429 50%, #d90429 75%, #edf2f4 75%, #edf2f4 100%);
+            background-size: 12px 12px;
+            color: #ffffff;
+            text-shadow: 1px 1px 4px #000;
+        }
+        .cat-all {
+            background: linear-gradient(45deg, #d90429 16.6%, #edf2f4 16.6%, #edf2f4 33.3%, #00b4d8 33.3%, #00b4d8 50%, #d90429 50%, #d90429 66.6%, #edf2f4 66.6%, #edf2f4 83.3%, #00b4d8 83.3%);
+            background-size: 16px 16px;
+            color: #ffffff;
+            text-shadow: 1px 1px 4px #000;
+        }
+
+        /* Sidebar Sidebar Cards */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 300px;
+        }
+
+        .panel {
             background: #1c2541;
             border: 2px solid #3a506b;
-            padding: 16px;
-            border-radius: 12px;
-            color: #ffffff;
-            line-height: 26px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
-        .legend strong {
-            display: block;
-            margin-bottom: 10px;
+        .panel h3 {
+            margin: 0 0 12px 0;
             text-transform: uppercase;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             letter-spacing: 1.5px;
-            color: #a5a9b4;
+            color: #ff4d4d;
             border-bottom: 1px solid #3a506b;
-            padding-bottom: 4px;
+            padding-bottom: 6px;
         }
-        
-        /* CSS Legend Pattern Swatches matching SVG patterns */
-        .legend-color {
-            width: 18px;
-            height: 18px;
-            float: left;
+
+        /* Hover Metric View */
+        #state-title { font-size: 1.6rem; font-weight: bold; margin-bottom: 4px; color: #ffffff; }
+        #dish-text { font-size: 1.1rem; color: #5bc0be; font-weight: 500; }
+
+        /* Legend Key Card Swatches */
+        .legend-item { display: flex; align-items: center; margin-bottom: 10px; font-size: 14px; }
+        .swatch {
+            width: 20px;
+            height: 20px;
             margin-right: 12px;
-            margin-top: 4px;
             border-radius: 4px;
             border: 1px solid rgba(255,255,255,0.1);
-        }
-        .swatch-salad { background-color: #d90429; }
-        .swatch-chips { background-color: #edf2f4; }
-        .swatch-other { background-color: #00b4d8; }
-        .swatch-salad-other {
-            background: linear-gradient(45deg, #d90429 25%, #00b4d8 25%, #00b4d8 50%, #d90429 50%, #d90429 75%, #00b4d8 75%, #00b4d8 100%);
-            background-size: 8px 8px;
-        }
-        .swatch-chips-other {
-            background: linear-gradient(45deg, #edf2f4 25%, #00b4d8 25%, #00b4d8 50%, #edf2f4 50%, #edf2f4 75%, #00b4d8 75%, #00b4d8 100%);
-            background-size: 8px 8px;
-        }
-        .swatch-salad-chips {
-            background: linear-gradient(45deg, #d90429 25%, #edf2f4 25%, #edf2f4 50%, #d90429 50%, #d90429 75%, #edf2f4 75%, #edf2f4 100%);
-            background-size: 8px 8px;
-        }
-        .swatch-all {
-            background: linear-gradient(45deg, #d90429 16.6%, #edf2f4 16.6%, #edf2f4 33.3%, #00b4d8 33.3%, #00b4d8 50%, #d90429 50%, #d90429 66.6%, #edf2f4 66.6%, #edf2f4 83.3%, #00b4d8 83.3%);
-            background-size: 12px 12px;
+            flex-shrink: 0;
         }
     </style>
 </head>
@@ -172,143 +191,151 @@
         <p>National Side Dish Map • Red, White, &amp; Blue Edition</p>
     </header>
 
-    <div id="map-container">
-        <div class="inset-box"></div>
-        <div id="map"></div>
+    <div class="infographic-container">
+        
+        <div class="grid-map">
+            <div class="inset-boundary"></div>
+
+            <div class="state-block cat-salad" style="grid-column: 1; grid-row: 1;" onclick="show('AK')">AK</div>
+            <div class="state-block cat-salad" style="grid-column: 11; grid-row: 1;" onclick="show('ME')">ME</div>
+
+            <div class="state-block cat-salad" style="grid-column: 2; grid-row: 2;" onclick="show('WA')">WA</div>
+            <div class="state-block cat-all" style="grid-column: 3; grid-row: 2;" onclick="show('ID')">ID</div>
+            <div class="state-block cat-all" style="grid-column: 4; grid-row: 2;" onclick="show('MT')">MT</div>
+            <div class="state-block cat-other" style="grid-column: 5; grid-row: 2;" onclick="show('ND')">ND</div>
+            <div class="state-block cat-salad-other" style="grid-column: 6; grid-row: 2;" onclick="show('MN')">MN</div>
+            <div class="state-block cat-other" style="grid-column: 7; grid-row: 2;" onclick="show('WI')">WI</div>
+            <div class="state-block cat-all" style="grid-column: 8; grid-row: 2;" onclick="show('MI')">MI</div>
+            <div class="state-block cat-salad" style="grid-column: 10; grid-row: 2;" onclick="show('NY')">NY</div>
+            <div class="state-block cat-other" style="grid-column: 11; grid-row: 2;" onclick="show('VT')">VT</div>
+            <div class="state-block cat-chips" style="grid-column: 12; grid-row: 2;" onclick="show('NH')">NH</div>
+
+            <div class="state-block cat-salad" style="grid-column: 2; grid-row: 3;" onclick="show('OR')">OR</div>
+            <div class="state-block cat-salad" style="grid-column: 3; grid-row: 3;" onclick="show('NV')">NV</div>
+            <div class="state-block cat-salad" style="grid-column: 4; grid-row: 3;" onclick="show('WY')">WY</div>
+            <div class="state-block cat-other" style="grid-column: 5; grid-row: 3;" onclick="show('SD')">SD</div>
+            <div class="state-block cat-other" style="grid-column: 6; grid-row: 3;" onclick="show('IA')">IA</div>
+            <div class="state-block cat-salad" style="grid-column: 7; grid-row: 3;" onclick="show('IL')">IL</div>
+            <div class="state-block cat-chips" style="grid-column: 8; grid-row: 3;" onclick="show('IN')">IN</div>
+            <div class="state-block cat-chips" style="grid-column: 9; grid-row: 3;" onclick="show('OH')">OH</div>
+            <div class="state-block cat-salad-other" style="grid-column: 10; grid-row: 3;" onclick="show('PA')">PA</div>
+            <div class="state-block cat-salad" style="grid-column: 11; grid-row: 3;" onclick="show('NJ')">NJ</div>
+            <div class="state-block cat-salad" style="grid-column: 12; grid-row: 3;" onclick="show('MA')">MA</div>
+
+            <div class="state-block cat-salad" style="grid-column: 1; grid-row: 4;" onclick="show('CA')">CA</div>
+            <div class="state-block cat-salad" style="grid-column: 3; grid-row: 4;" onclick="show('UT')">UT</div>
+            <div class="state-block cat-salad" style="grid-column: 4; grid-row: 4;" onclick="show('CO')">CO</div>
+            <div class="state-block cat-other" style="grid-column: 5; grid-row: 4;" onclick="show('NE')">NE</div>
+            <div class="state-block cat-chips" style="grid-column: 6; grid-row: 4;" onclick="show('MO')">MO</div>
+            <div class="state-block cat-chips" style="grid-column: 7; grid-row: 4;" onclick="show('KY')">KY</div>
+            <div class="state-block cat-chips-other" style="grid-column: 8; grid-row: 4;" onclick="show('WV')">WV</div>
+            <div class="state-block cat-salad" style="grid-column: 9; grid-row: 4;" onclick="show('VA')">VA</div>
+            <div class="state-block cat-salad" style="grid-column: 10; grid-row: 4;" onclick="show('MD')">MD</div>
+            <div class="state-block cat-salad" style="grid-column: 11; grid-row: 4;" onclick="show('DE')">DE</div>
+            <div class="state-block cat-salad" style="grid-column: 12; grid-row: 4;" onclick="show('CT')">CT</div>
+
+            <div class="state-block cat-salad" style="grid-column: 3; grid-row: 5;" onclick="show('AZ')">AZ</div>
+            <div class="state-block cat-salad" style="grid-column: 4; grid-row: 5;" onclick="show('NM')">NM</div>
+            <div class="state-block cat-salad-chips" style="grid-column: 5; grid-row: 5;" onclick="show('KS')">KS</div>
+            <div class="state-block cat-chips-other" style="grid-column: 6; grid-row: 5;" onclick="show('OK')">OK</div>
+            <div class="state-block cat-all" style="grid-column: 7; grid-row: 5;" onclick="show('AR')">AR</div>
+            <div class="state-block cat-salad-chips" style="grid-column: 8; grid-row: 5;" onclick="show('TN')">TN</div>
+            <div class="state-block cat-salad" style="grid-column: 9; grid-row: 5;" onclick="show('NC')">NC</div>
+            <div class="state-block cat-salad" style="grid-column: 10; grid-row: 5;" onclick="show('SC')">SC</div>
+            <div class="state-block cat-salad" style="grid-column: 11; grid-row: 5;" onclick="show('RI')">RI</div>
+
+            <div class="state-block cat-salad" style="grid-column: 4; grid-row: 6;" onclick="show('TX')">TX</div>
+            <div class="state-block cat-salad" style="grid-column: 5; grid-row: 6;" onclick="show('LA')">LA</div>
+            <div class="state-block cat-salad-chips" style="grid-column: 6; grid-row: 6;" onclick="show('MS')">MS</div>
+            <div class="state-block cat-chips" style="grid-column: 7; grid-row: 6;" onclick="show('AL')">AL</div>
+            <div class="state-block cat-salad" style="grid-column: 8; grid-row: 6;" onclick="show('GA')">GA</div>
+
+            <div class="state-block cat-salad" style="grid-column: 1; grid-row: 7;" onclick="show('HI')">HI</div>
+            <div class="state-block cat-salad" style="grid-column: 9; grid-row: 7;" onclick="show('FL')">FL</div>
+        </div>
+
+        <div class="sidebar">
+            <div class="panel">
+                <h3>Menu Tracking</h3>
+                <div id="state-title">United States</div>
+                <div id="dish-text">Click any state block to view top sides</div>
+            </div>
+
+            <div class="panel">
+                <h3>Color &amp; Striping Key</h3>
+                <div class="legend-item"><div class="swatch cat-salad"></div> Red: Salad Only</div>
+                <div class="legend-item"><div class="swatch cat-chips"></div> White: Potato Chips Only</div>
+                <div class="legend-item"><div class="swatch cat-other"></div> Blue: Other Only (Dip, Veggies)</div>
+                <div class="legend-item"><div class="swatch cat-salad-other"></div> Striped: Salad + Other</div>
+                <div class="legend-item"><div class="swatch cat-chips-other"></div> Striped: Chips + Other</div>
+                <div class="legend-item"><div class="swatch cat-salad-chips"></div> Striped: Salad + Chips</div>
+                <div class="legend-item"><div class="swatch cat-all"></div> Striped: All Categories Tied</div>
+            </div>
+        </div>
+
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const stateCategories = {
-            "Alabama": "Chips Only", "Alaska": "Salad + Other", "Arizona": "Salad Only", "Arkansas": "Salad + Chips + Other",
-            "California": "Salad Only", "Colorado": "Salad Only", "Connecticut": "Salad Only", "Delaware": "Salad Only",
-            "Florida": "Salad Only", "Georgia": "Salad Only", "Hawaii": "Salad Only", "Idaho": "Salad + Chips + Other",
-            "Illinois": "Salad Only", "Indiana": "Chips Only", "Iowa": "Other Only", "Kansas": "Salad + Chips",
-            "Kentucky": "Chips Only", "Louisiana": "Salad Only", "Maine": "Salad + Chips + Other", "Maryland": "Salad Only",
-            "Massachusetts": "Salad Only", "Michigan": "Salad + Chips + Other", "Minnesota": "Salad + Other", "Mississippi": "Salad + Chips",
-            "Missouri": "Chips Only", "Montana": "Salad + Chips + Other", "Nebraska": "Other Only", "Nevada": "Salad Only",
-            "Newamp": "Chips Only", "New Hampshire": "Chips Only", "New Jersey": "Salad Only", "New Mexico": "Salad Only", 
-            "New York": "Salad Only", "North Carolina": "Salad Only", "North Dakota": "Other Only", "Ohio": "Chips Only", 
-            "Oklahoma": "Chips + Other", "Oregon": "Salad Only", "Pennsylvania": "Salad + Other", "Rhode Island": "Salad Only", 
-            "South Carolina": "Salad Only", "South Dakota": "Other Only", "Tennessee": "Salad + Chips", "Texas": "Salad Only", 
-            "Utah": "Salad Only", "Vermont": "Other Only", "Virginia": "Salad Only", "Washington": "Salad Only", 
-            "West Virginia": "Chips + Other", "Wisconsin": "Other Only", "Wyoming": "Salad Only"
-        };
-
         const stateDishes = {
-            "Alabama": "Potato Chips", "Alaska": "Macaroni Salad, Salad", "Arizona": "Salad", "Arkansas": "Nachos, Potato Chips, Salad",
-            "California": "Salad", "Colorado": "Salad", "Connecticut": "Salad", "Delaware": "Salad", "Florida": "Salad", "Georgia": "Salad",
-            "Hawaii": "Salad", "Idaho": "Asparagus, Cowboy Caviar, Potato Chips, Salad", "Illinois": "Salad",
-            "Indiana": "Potato Chips", "Iowa": "Asparagus", "Kansas": "Potato Chips, Salad", "Kentucky": "Potato Chips",
-            "Louisiana": "Salad", "Maine": "Buffalo Chicken Dip, Potato Chips, Salad", "Maryland": "Salad", "Massachusetts": "Salad",
-            "Michigan": "Asparagus, Potato Chips, Salad", "Minnesota": "Asparagus, Salad", "Mississippi": "Potato Chips, Salad",
-            "Missouri": "Potato Chips", "Montana": "Cowboy Caviar, Elote, Macaroni Salad, Potato Chips, Salad",
-            "Nebraska": "Asparagus", "Nevada": "Salad", "New Hampshire": "Potato Chips", "New Jersey": "Salad", "New Mexico": "Salad",
-            "New York": "Salad", "North Carolina": "Salad", "North Dakota": "Cowboy Caviar", "Ohio": "Potato Chips", "Oklahoma": "Elote, Potato Chips",
-            "Oregon": "Salad", "Pennsylvania": "Buffalo Chicken Dip, Salad", "Rhode Island": "Salad", "South Carolina": "Salad", "South Dakota": "Asparagus",
-            "Tennessee": "Potato Chips, Salad", "Texas": "Salad", "Utah": "Salad", "Vermont": "Asparagus, Macaroni Salad, Potato Salad",
-            "Virginia": "Salad", "Washington": "Salad", "West Virginia": "Buffalo Chicken Dip, Potato Chips", "Wisconsin": "Asparagus", "Wyoming": "Salad"
+            "AL": ["Alabama", "Potato Chips"],
+            "AK": ["Alaska", "Macaroni Salad, Salad"],
+            "AZ": ["Arizona", "Salad"],
+            "AR": ["Arkansas", "Nachos, Potato Chips, Salad"],
+            "CA": ["California", "Salad"],
+            "CO": ["Colorado", "Salad"],
+            "CT": ["Connecticut", "Salad"],
+            "DE": ["Delaware", "Salad"],
+            "FL": ["Florida", "Salad"],
+            "GA": ["Georgia", "Salad"],
+            "HI": ["Hawaii", "Salad"],
+            "ID": ["Idaho", "Asparagus, Cowboy Caviar, Potato Chips, Salad"],
+            "IL": ["Illinois", "Salad"],
+            "IN": ["Indiana", "Potato Chips"],
+            "IA": ["Iowa", "Asparagus"],
+            "KS": ["Kansas", "Potato Chips, Salad"],
+            "KY": ["Kentucky", "Potato Chips"],
+            "LA": ["Louisiana", "Salad"],
+            "ME": ["Maine", "Buffalo Chicken Dip, Potato Chips, Salad"],
+            "MD": ["Maryland", "Salad"],
+            "MA": ["Massachusetts", "Salad"],
+            "MI": ["Michigan", "Asparagus, Potato Chips, Salad"],
+            "MN": ["Minnesota", "Asparagus, Salad"],
+            "MS": ["Mississippi", "Potato Chips, Salad"],
+            "MO": ["Missouri", "Potato Chips"],
+            "MT": ["Montana", "Cowboy Caviar, Elote, Macaroni Salad, Potato Chips, Salad"],
+            "NE": ["Nebraska", "Asparagus"],
+            "NV": ["Nevada", "Salad"],
+            "NH": ["New Hampshire", "Potato Chips"],
+            "NJ": ["New Jersey", "Salad"],
+            "NM": ["New Mexico", "Salad"],
+            "NY": ["New York", "Salad"],
+            "NC": ["North Carolina", "Salad"],
+            "ND": ["North Dakota", "Cowboy Caviar"],
+            "OH": ["Ohio", "Potato Chips"],
+            "OK": ["Oklahoma", "Elote, Potato Chips"],
+            "OR": ["Oregon", "Salad"],
+            "PA": ["Pennsylvania", "Buffalo Chicken Dip, Salad"],
+            "RI": ["Rhode Island", "Salad"],
+            "SC": ["South Carolina", "Salad"],
+            "SD": ["South Dakota", "Asparagus"],
+            "TN": ["Tennessee", "Potato Chips, Salad"],
+            "TX": ["Texas", "Salad"],
+            "UT": ["Utah", "Salad"],
+            "VT": ["Vermont", "Asparagus, Macaroni Salad, Potato Salad"],
+            "VA": ["Virginia", "Salad"],
+            "WA": ["Washington", "Salad"],
+            "WV": ["West Virginia", "Buffalo Chicken Dip, Potato Chips"],
+            "WI": ["Wisconsin", "Asparagus"],
+            "WY": ["Wyoming", "Salad"]
         };
 
-        const map = L.map('map', { zoomControl: true, attributionControl: false }).setView([37.8, -96], 4);
-        const svgRenderer = L.svg({ padding: 0.5 }).addTo(map);
-        const defs = svgRenderer._defs;
-
-        function makeSVGPattern(id, colors) {
-            const p = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
-            p.setAttribute("id", id); p.setAttribute("width", "20"); p.setAttribute("height", "20");
-            p.setAttribute("patternUnits", "userSpaceOnUse"); p.setAttribute("patternTransform", "rotate(45)");
-            const step = 20 / colors.length;
-            colors.forEach((col, idx) => {
-                const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                r.setAttribute("x", (idx * step).toString()); r.setAttribute("y", "0");
-                r.setAttribute("width", step.toString()); r.setAttribute("height", "20");
-                r.setAttribute("fill", col); p.appendChild(r);
-            });
-            defs.appendChild(p);
+        function show(code) {
+            const data = stateDishes[code];
+            if(data) {
+                document.getElementById('state-title').innerText = data[0];
+                document.getElementById('dish-text').innerText = "🍢 " + data[1];
+            }
         }
-        makeSVGPattern("pat-salad-other", ["#d90429", "#00b4d8"]);
-        makeSVGPattern("pat-chips-other", ["#edf2f4", "#00b4d8"]);
-        makeSVGPattern("pat-salad-chips", ["#d90429", "#edf2f4"]);
-        makeSVGPattern("pat-all", ["#d90429", "#edf2f4", "#00b4d8"]);
-
-        function getFillStyle(stateName) {
-            const cat = stateCategories[stateName];
-            if (cat === "Salad Only") return '#d90429';
-            if (cat === "Chips Only") return '#edf2f4';
-            if (cat === "Other Only") return '#00b4d8';
-            if (cat === "Salad + Other") return 'url(#pat-salad-other)';
-            if (cat === "Chips + Other") return 'url(#pat-chips-other)';
-            if (cat === "Salad + Chips") return 'url(#pat-salad-chips)';
-            if (cat === "Salad + Chips + Other") return 'url(#pat-all)';
-            return '#1c2541';
-        }
-
-        function styleFeature(feature) {
-            return {
-                fillColor: getFillStyle(feature.properties.name),
-                weight: 1.5, opacity: 1, color: '#0b132b', fillOpacity: 1.0, renderer: svgRenderer
-            };
-        }
-
-        const info = L.control({position: 'topright'});
-        info.onAdd = function () { this._div = L.DomUtil.create('div', 'info'); this.update(); return this._div; };
-        info.update = function (props) {
-            this._div.innerHTML = '<h4>Menu Tracking</h4>' + (props ?
-                `<div class="state-name">${props.name}</div>
-                 <div class="dish-tag">Top #1 Memorial Day Sides:</div>
-                 <div class="dish-name">🇺🇸 ${stateDishes[props.name] || 'No Records'}</div>` : 
-                '<span style="color:#6c757d">Hover over a state</span>');
-        };
-        info.addTo(map);
-
-        function highlightFeature(e) { e.target.setStyle({ weight: 3, color: '#ffffff' }).bringToFront(); info.update(e.target.feature.properties); }
-        function resetHighlight(e) { geojson.resetStyle(e.target); info.update(); }
-        function onEachFeature(feature, layer) { layer.on({ mouseover: highlightFeature, mouseout: resetHighlight }); }
-
-        function transformGeoJSONCoords(coords, type, transformFn) {
-            if (type === "Point") return transformFn(coords);
-            if (type === "LineString" || type === "MultiPoint") return coords.map(transformFn);
-            if (type === "Polygon" || type === "MultiLineString") return coords.map(r => r.map(transformFn));
-            if (type === "MultiPolygon") return coords.map(p => p.map(r => r.map(transformFn)));
-            return coords;
-        }
-
-        // Replaced broken URL with a highly stable, premium OpenStreetMap mirror boundary line file
-        fetch('https://raw.githubusercontent.com/datasets/geo-boundaries-us-110m/master/data/us_states.geojson')
-        .then(res => res.json())
-        .then(data => {
-            data.features.forEach(feature => {
-                const name = feature.properties.name;
-                if (name === "Alaska") {
-                    feature.geometry.coordinates = transformGeoJSONCoords(feature.geometry.coordinates, feature.geometry.type, c => {
-                        return [(c[0] + 149) * 0.38 - 118.5, (c[1] - 63) * 0.38 + 25.0];
-                    });
-                } else if (name === "Hawaii") {
-                    feature.geometry.coordinates = transformGeoJSONCoords(feature.geometry.coordinates, feature.geometry.type, c => {
-                        return [(c[0] + 158) * 1.1 - 112.5, (c[1] - 20) * 1.1 + 22.2];
-                    });
-                }
-            });
-
-            geojson = L.geoJson(data, { style: styleFeature, onEachFeature: onEachFeature }).addTo(map);
-            setTimeout(() => { map.invalidateSize(); }, 200);
-        });
-
-        const legend = L.control({position: 'bottomright'});
-        legend.onAdd = function () {
-            const div = L.DomUtil.create('div', 'legend');
-            div.innerHTML += '<strong>Color &amp; Striping Key</strong>';
-            div.innerHTML += '<div><i class="legend-color swatch-salad"></i> Red: Salad Only</div>';
-            div.innerHTML += '<div><i class="legend-color swatch-chips"></i> White: Potato Chips Only</div>';
-            div.innerHTML += '<div><i class="legend-color swatch-other"></i> Blue: Other Only (Dip, Veggies)</div>';
-            div.innerHTML += '<div><i class="legend-color swatch-salad-other"></i> Stripes: Salad + Other</div>';
-            div.innerHTML += '<div><i class="legend-color swatch-chips-other"></i> Stripes: Chips + Other</div>';
-            div.innerHTML += '<div><i class="legend-color swatch-salad-chips"></i> Stripes: Salad + Chips</div>';
-            div.innerHTML += '<div><i class="legend-color swatch-all"></i> Stripes: All Categories Tied</div>';
-            return div;
-        };
-        legend.addTo(map);
     </script>
 </body>
 </html>
