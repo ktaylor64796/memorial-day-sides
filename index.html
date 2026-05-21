@@ -179,7 +179,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Data categories derived directly from your CSV
+        // Exact data categories parsed directly from your CSV
         const stateCategories = {
             "Alabama": "Chips Only", "Alaska": "Salad + Other", "Arizona": "Salad Only",
             "Arkansas": "Salad + Chips + Other", "California": "Salad Only", "Colorado": "Salad Only",
@@ -221,45 +221,40 @@
             "Wisconsin": "Asparagus", "Wyoming": "Salad"
         };
 
-        // Initialize map
+        // Initialize map completely safely
         const map = L.map('map', {
             zoomControl: true,
             attributionControl: false
         }).setView([37.8, -96], 4);
 
-        // Force Leaflet to render shapes as an SVG document overlay
-        const svgRenderer = L.svg({ padding: 0.5 }).addTo(map);
-        const defs = svgRenderer._defs;
+        // Explicitly load standard SVG renderer engine
+        const svgRenderer = L.svg({ padding: 1.0 }).addTo(map);
 
-        // Custom SVG pattern creation script for vector stripes
-        function makeSVGPattern(id, colors) {
-            const p = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
-            p.setAttribute("id", id);
-            p.setAttribute("width", "20");
-            p.setAttribute("height", "20");
-            p.setAttribute("patternUnits", "userSpaceOnUse");
-            p.setAttribute("patternTransform", "rotate(45)");
+        // Inject high-compatibility SVG elements directly into Leaflet's defs core loop
+        map.on('layeradd', function () {
+            const defs = svgRenderer._defs;
+            if (defs && !defs.getElementById('pat-salad-other')) {
+                const addPat = (id, colors) => {
+                    const p = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
+                    p.setAttribute("id", id); p.setAttribute("width", "20"); p.setAttribute("height", "20");
+                    p.setAttribute("patternUnits", "userSpaceOnUse"); p.setAttribute("patternTransform", "rotate(45)");
+                    const step = 20 / colors.length;
+                    colors.forEach((c, idx) => {
+                        const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                        r.setAttribute("x", (idx * step).toString()); r.setAttribute("y", "0");
+                        r.setAttribute("width", step.toString()); r.setAttribute("height", "20");
+                        r.setAttribute("fill", c); p.appendChild(r);
+                    });
+                    defs.appendChild(p);
+                };
+                addPat("pat-salad-other", ["#d90429", "#00b4d8"]);
+                addPat("pat-chips-other", ["#edf2f4", "#00b4d8"]);
+                addPat("pat-salad-chips", ["#d90429", "#edf2f4"]);
+                addPat("pat-all", ["#d90429", "#edf2f4", "#00b4d8"]);
+            }
+        });
 
-            const step = 20 / colors.length;
-            colors.forEach((col, idx) => {
-                const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                r.setAttribute("x", (idx * step).toString());
-                r.setAttribute("y", "0");
-                r.setAttribute("width", step.toString());
-                r.setAttribute("height", "20");
-                r.setAttribute("fill", col);
-                p.appendChild(r);
-            });
-            defs.appendChild(p);
-        }
-
-        // Initialize dynamic vector patterns inside Leaflet's SVG workspace
-        makeSVGPattern("pat-salad-other", ["#d90429", "#00b4d8"]);
-        makeSVGPattern("pat-chips-other", ["#edf2f4", "#00b4d8"]);
-        makeSVGPattern("pat-salad-chips", ["#d90429", "#edf2f4"]);
-        makeSVGPattern("pat-all", ["#d90429", "#edf2f4", "#00b4d8"]);
-
-        // Return solid color or reference the corresponding SVG pattern ID
+        // Map fill-styles to corresponding structural pattern values
         function getFillStyle(stateName) {
             const cat = stateCategories[stateName];
             if (cat === "Salad Only") return '#d90429';       // Red
@@ -277,13 +272,13 @@
                 fillColor: getFillStyle(feature.properties.name),
                 weight: 1.5,
                 opacity: 1,
-                color: '#0b132b', // Deep backdrop bounding border color
+                color: '#0b132b', 
                 fillOpacity: 1.0,
                 renderer: svgRenderer
             };
         }
 
-        // Information Metrics Panel
+        // Information panel tracking
         const info = L.control({position: 'topright'});
         info.onAdd = function () {
             this._div = L.DomUtil.create('div', 'info');
@@ -324,7 +319,7 @@
             return coords;
         }
 
-        // Load US data and mathematically shift AK / HI inside the frame bounds
+        // Fetch spatial boundaries and render geometry configurations
         fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json')
             .then(res => res.json())
             .then(data => {
@@ -347,7 +342,7 @@
                 }).addTo(map);
             });
 
-        // Legend panel
+        // Legend control element
         const legend = L.control({position: 'bottomright'});
         legend.onAdd = function () {
             const div = L.DomUtil.create('div', 'legend');
