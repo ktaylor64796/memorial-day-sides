@@ -179,7 +179,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Exact data categories parsed directly from your CSV
+        // Standardized casing to prevent missing color data blocks
         const stateCategories = {
             "Alabama": "Chips Only", "Alaska": "Salad + Other", "Arizona": "Salad Only",
             "Arkansas": "Salad + Chips + Other", "California": "Salad Only", "Colorado": "Salad Only",
@@ -190,7 +190,7 @@
             "Maine": "Salad + Chips + Other", "Maryland": "Salad Only", "Massachusetts": "Salad Only",
             "Michigan": "Salad + Chips + Other", "Minnesota": "Salad + Other", "Mississippi": "Salad + Chips",
             "Missouri": "Chips Only", "Montana": "Salad + Chips + Other", "Nebraska": "Other Only",
-            "Nevada": "Salad Only", "New Hampshire": "Chips Only", "New Jersey": "Salad Only",
+            "Nevada": "Salad Only", "Newampshire": "Chips Only", "New Hampshire": "Chips Only", "New Jersey": "Salad Only",
             "New Mexico": "Salad Only", "New York": "Salad Only", "North Carolina": "Salad Only",
             "North Dakota": "Other Only", "Ohio": "Chips Only", "Oklahoma": "Chips + Other",
             "Oregon": "Salad Only", "Pennsylvania": "Salad + Other", "Rhode Island": "Salad Only",
@@ -221,40 +221,45 @@
             "Wisconsin": "Asparagus", "Wyoming": "Salad"
         };
 
-        // Initialize map completely safely
+        // Initialize map
         const map = L.map('map', {
             zoomControl: true,
             attributionControl: false
         }).setView([37.8, -96], 4);
 
-        // Explicitly load standard SVG renderer engine
-        const svgRenderer = L.svg({ padding: 1.0 }).addTo(map);
+        // Force explicit SVG core configuration
+        const svgRenderer = L.svg({ padding: 0.5 }).addTo(map);
+        const defs = svgRenderer._defs;
 
-        // Inject high-compatibility SVG elements directly into Leaflet's defs core loop
-        map.on('layeradd', function () {
-            const defs = svgRenderer._defs;
-            if (defs && !defs.getElementById('pat-salad-other')) {
-                const addPat = (id, colors) => {
-                    const p = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
-                    p.setAttribute("id", id); p.setAttribute("width", "20"); p.setAttribute("height", "20");
-                    p.setAttribute("patternUnits", "userSpaceOnUse"); p.setAttribute("patternTransform", "rotate(45)");
-                    const step = 20 / colors.length;
-                    colors.forEach((c, idx) => {
-                        const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                        r.setAttribute("x", (idx * step).toString()); r.setAttribute("y", "0");
-                        r.setAttribute("width", step.toString()); r.setAttribute("height", "20");
-                        r.setAttribute("fill", c); p.appendChild(r);
-                    });
-                    defs.appendChild(p);
-                };
-                addPat("pat-salad-other", ["#d90429", "#00b4d8"]);
-                addPat("pat-chips-other", ["#edf2f4", "#00b4d8"]);
-                addPat("pat-salad-chips", ["#d90429", "#edf2f4"]);
-                addPat("pat-all", ["#d90429", "#edf2f4", "#00b4d8"]);
-            }
-        });
+        // Vector pattern generation engine for stripes
+        function makeSVGPattern(id, colors) {
+            const p = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
+            p.setAttribute("id", id);
+            p.setAttribute("width", "20");
+            p.setAttribute("height", "20");
+            p.setAttribute("patternUnits", "userSpaceOnUse");
+            p.setAttribute("patternTransform", "rotate(45)");
 
-        // Map fill-styles to corresponding structural pattern values
+            const step = 20 / colors.length;
+            colors.forEach((col, idx) => {
+                const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                r.setAttribute("x", (idx * step).toString());
+                r.setAttribute("y", "0");
+                r.setAttribute("width", step.toString());
+                r.setAttribute("height", "20");
+                r.setAttribute("fill", col);
+                p.appendChild(r);
+            });
+            defs.appendChild(p);
+        }
+
+        // Generate vector stripe patterns 
+        makeSVGPattern("pat-salad-other", ["#d90429", "#00b4d8"]);
+        makeSVGPattern("pat-chips-other", ["#edf2f4", "#00b4d8"]);
+        makeSVGPattern("pat-salad-chips", ["#d90429", "#edf2f4"]);
+        makeSVGPattern("pat-all", ["#d90429", "#edf2f4", "#00b4d8"]);
+
+        // Return solid color or reference pattern
         function getFillStyle(stateName) {
             const cat = stateCategories[stateName];
             if (cat === "Salad Only") return '#d90429';       // Red
@@ -264,7 +269,7 @@
             if (cat === "Chips + Other") return 'url(#pat-chips-other)';
             if (cat === "Salad + Chips") return 'url(#pat-salad-chips)';
             if (cat === "Salad + Chips + Other") return 'url(#pat-all)';
-            return '#1c2541';
+            return '#1c2541'; // Fallback dark gray
         }
 
         function styleFeature(feature) {
@@ -278,7 +283,7 @@
             };
         }
 
-        // Information panel tracking
+        // Metric info box
         const info = L.control({position: 'topright'});
         info.onAdd = function () {
             this._div = L.DomUtil.create('div', 'info');
@@ -319,7 +324,7 @@
             return coords;
         }
 
-        // Fetch spatial boundaries and render geometry configurations
+        // Fetch polygons and manually map transformations
         fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json')
             .then(res => res.json())
             .then(data => {
